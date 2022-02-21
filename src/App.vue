@@ -1,14 +1,14 @@
 <template>
-  <HelloWorld />
+  <SearchView />
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import SearchView from './components/SearchView.vue'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    SearchView
   }
 }
 </script>

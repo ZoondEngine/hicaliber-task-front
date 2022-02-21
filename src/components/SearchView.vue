@@ -2,7 +2,7 @@
   <div class="common-layout">
     <el-container>
       <el-main>
-        <el-dialog v-model="showDialog" title="Shipping address">
+        <el-dialog v-model="showDialog" title="Search params">
           <el-form :model="searchContainer">
             <el-form-item label="Address">
               <el-input v-model="searchContainer.name" autocomplete="off"></el-input>
@@ -97,16 +97,16 @@ export default {
     },
 
     withFixedPrice() {
-      if(this.searchContainer.price_start === null || this.searchContainer.price_end === null) {
-        return this.searchContainer;
-      }
-      else {
+      if(this.searchContainer.price_start !== null || this.searchContainer.price_end !== null) {
         this.searchContainer.price = {
           0: Number(this.searchContainer.price_start),
           1: Number(this.searchContainer.price_end)
         };
-        return this.searchContainer;
       }
+
+      // if we don't apply price array to container,
+      // then request and search filters skip it on backend
+      return this.searchContainer;
     },
 
     async closeAndSearch() {
@@ -122,8 +122,8 @@ export default {
       this.searchContainer.bathrooms = null;
       this.searchContainer.storeys = null;
       this.searchContainer.garages = null;
-      this.showDialog = false;
-      await this.search();
+
+      await this.closeAndSearch();
     }
   }
 }
