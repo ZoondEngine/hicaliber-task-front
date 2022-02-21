@@ -1,58 +1,150 @@
 <template>
-  <div class="hello">
-    <h1>{{ msg }}</h1>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br>
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
-    </p>
-    <h3>Installed CLI Plugins</h3>
-    <ul>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-eslint" target="_blank" rel="noopener">eslint</a></li>
-    </ul>
-    <h3>Essential Links</h3>
-    <ul>
-      <li><a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a></li>
-      <li><a href="https://forum.vuejs.org" target="_blank" rel="noopener">Forum</a></li>
-      <li><a href="https://chat.vuejs.org" target="_blank" rel="noopener">Community Chat</a></li>
-      <li><a href="https://twitter.com/vuejs" target="_blank" rel="noopener">Twitter</a></li>
-      <li><a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a></li>
-    </ul>
-    <h3>Ecosystem</h3>
-    <ul>
-      <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
-      <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
-      <li><a href="https://github.com/vuejs/vue-devtools#vue-devtools" target="_blank" rel="noopener">vue-devtools</a></li>
-      <li><a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener">vue-loader</a></li>
-      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
-    </ul>
+  <div class="common-layout">
+    <el-container>
+      <el-main>
+        <el-dialog v-model="showDialog" title="Shipping address">
+          <el-form :model="searchContainer">
+            <el-form-item label="Address">
+              <el-input v-model="searchContainer.name" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="Price start">
+              <el-input v-model="searchContainer.price_start" />
+            </el-form-item>
+            <el-form-item label="Price end">
+              <el-input v-model="searchContainer.price_end" />
+            </el-form-item>
+            <el-form-item label="Storeys">
+              <el-input v-model="searchContainer.storeys" />
+            </el-form-item>
+            <el-form-item label="Bathrooms">
+              <el-input v-model="searchContainer.bathrooms" />
+            </el-form-item>
+            <el-form-item label="Bedrooms">
+              <el-input v-model="searchContainer.bedrooms" />
+            </el-form-item>
+            <el-form-item label="Garages">
+              <el-input v-model="searchContainer.garages" />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <span class="dialog-footer">
+              <el-button @click="resetForm">Reset form</el-button>
+              <el-button type="primary" @click="closeAndSearch">Confirm</el-button>
+            </span>
+          </template>
+        </el-dialog>
+        <el-button type="primary" @click="search" :loading="loading">Search</el-button>
+        <el-button @click="showDialog = !showDialog" :loading="loading">Open params</el-button>
+        <el-table v-loading="loading" :data="results" height="700" style="width: 100%; margin-top: 20px;">
+          <el-table-column prop="name" label="Address" width="180" />
+          <el-table-column prop="price" label="Price" width="180" />
+          <el-table-column prop="bedrooms" label="Bedrooms" />
+          <el-table-column prop="bathrooms" label="Bathrooms" />
+          <el-table-column prop="storeys" label="Storeys" />
+          <el-table-column prop="garages" label="Garages" />
+        </el-table>
+      </el-main>
+    </el-container>
   </div>
 </template>
 
 <script>
+import { ElNotification } from 'element-plus'
 export default {
-  name: 'HelloWorld',
-  props: {
-    msg: String
+  data() {
+    return {
+      results: [],
+      loading: false,
+      showDialog: false,
+      searchContainer: {
+        name: null,
+        price_start: null,
+        price_end: null,
+        price: null,
+        bedrooms: null,
+        bathrooms: null,
+        storeys: null,
+        garages: null
+      }
+    }
+  },
+
+  mounted() {
+    this.search()
+  },
+
+  methods: {
+    notify(title, message, type) {
+      ElNotification({
+        title: title,
+        message: message,
+        type: type,
+      })
+    },
+
+    async search() {
+      this.loading = true;
+
+      try {
+        const response = await this.axios.post('http://127.0.0.1:8000/api/search', this.withFixedPrice());
+        this.results = response.data.data;
+      }
+      catch(err) {
+        this.notify('Error', 'An error was occurred while processing data: ' + err, 'error');
+      }
+
+      this.loading = false;
+    },
+
+    withFixedPrice() {
+      if(this.searchContainer.price_start === null || this.searchContainer.price_end === null) {
+        return this.searchContainer;
+      }
+      else {
+        this.searchContainer.price = {
+          0: Number(this.searchContainer.price_start),
+          1: Number(this.searchContainer.price_end)
+        };
+        return this.searchContainer;
+      }
+    },
+
+    async closeAndSearch() {
+      this.showDialog = false;
+      await this.search();
+    },
+
+    async resetForm() {
+      this.searchContainer.name = null;
+      this.searchContainer.price_start = null;
+      this.searchContainer.price_end = null;
+      this.searchContainer.bedrooms = null;
+      this.searchContainer.bathrooms = null;
+      this.searchContainer.storeys = null;
+      this.searchContainer.garages = null;
+      this.showDialog = false;
+      await this.search();
+    }
   }
 }
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-h3 {
-  margin: 40px 0 0;
+:root {
+  --el-color-primary: #409eff;
 }
-ul {
-  list-style-type: none;
-  padding: 0;
+.el-button .custom-loading .circular {
+  margin-right: 6px;
+  width: 18px;
+  height: 18px;
+  animation: loading-rotate 2s linear infinite;
 }
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
+.el-button .custom-loading .circular .path {
+  animation: loading-dash 1.5s ease-in-out infinite;
+  stroke-dasharray: 90, 150;
+  stroke-dashoffset: 0;
+  stroke-width: 2;
+  stroke: var(--el-button-text-color);
+  stroke-linecap: round;
 }
 </style>
